@@ -18,6 +18,12 @@ typedef Widget StopperBuilder(
   int stop,
 );
 
+/// A callback function to get notified about position changes
+typedef void OnPositionChangedCallback(
+  /// The new position of the bottom sheet
+  double position,
+);
+
 /// A widget that changes its height to one of the predefined values based on user-initiated dragging.
 /// Designed to be used with [showBottomSheet()] method.
 class Stopper extends StatefulWidget {
@@ -36,6 +42,9 @@ class Stopper extends StatefulWidget {
   /// The minimum offset (in logical pixels) necessary to trigger a stop change when dragging.
   final double dragThreshold;
 
+  /// A callback to get notified when the position of the bottom sheet changes
+  final OnPositionChangedCallback onPositionChanged;
+
   /// The constructor.
   Stopper({
     Key key,
@@ -44,6 +53,7 @@ class Stopper extends StatefulWidget {
     this.initialStop = 0,
     this.onClose,
     this.dragThreshold = 25,
+    this.onPositionChanged,
   })  : assert(initialStop < stops.length),
         super(key: key);
 
@@ -208,8 +218,12 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
               context, _scrollController, _scrollPhysics, _currentStop),
         ),
         builder: (context, child) {
+          var newHeight = height;
+          if (widget.onPositionChanged != null) {
+            widget.onPositionChanged(newHeight);
+          }
           return SizedBox(
-            height: height,
+            height: newHeight,
             child: child,
           );
         });
