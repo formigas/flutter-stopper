@@ -1,32 +1,39 @@
 library stopper;
 
-import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:flutter/material.dart';
 
 /// A builder function to be passed to [Stopper].
 typedef Widget StopperBuilder(
-    /// A build context
-    BuildContext context,
-    /// A scroll controller to be passed to a scrollable widget
-    ScrollController controller, 
-    // A scroll physics to be passed to a scrollable widget
-    ScrollPhysics physics, 
-    /// The current stop value.
-    int stop
-  );
+  /// A build context
+  BuildContext context,
+
+  /// A scroll controller to be passed to a scrollable widget
+  ScrollController controller,
+
+  /// A scroll physics to be passed to a scrollable widget
+  ScrollPhysics physics,
+
+  /// The current stop value.
+  int stop,
+);
 
 /// A widget that changes its height to one of the predefined values based on user-initiated dragging.
 /// Designed to be used with [showBottomSheet()] method.
 class Stopper extends StatefulWidget {
-    /// The list of stop heights in logical pixels. The values must be sorted from lowest to highest.
+  /// The list of stop heights in logical pixels. The values must be sorted from lowest to highest.
   final List<double> stops;
-    /// This callback function is called when the user triggers a close. If null, the bottom sheet cannot be closed by the user.
+
+  /// This callback function is called when the user triggers a close. If null, the bottom sheet cannot be closed by the user.
   final Function onClose;
-    /// A builder to build the contents of the bottom sheet.
+
+  /// A builder to build the contents of the bottom sheet.
   final StopperBuilder builder;
-    /// The initial stop.
+
+  /// The initial stop.
   final int initialStop;
-    /// The minimum offset (in logical pixels) necessary to trigger a stop change when dragging.
+
+  /// The minimum offset (in logical pixels) necessary to trigger a stop change when dragging.
   final double dragThreshold;
 
   /// The constructor.
@@ -36,9 +43,8 @@ class Stopper extends StatefulWidget {
     @required this.stops,
     this.initialStop = 0,
     this.onClose,
-    this.dragThreshold = 25
-  })
-      : assert(initialStop < stops.length),
+    this.dragThreshold = 25,
+  })  : assert(initialStop < stops.length),
         super(key: key);
 
   @override
@@ -75,9 +81,12 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
     this._targetStop = _currentStop;
     _scrollController = ScrollController();
     _scrollPhysics = _getScrollPhysicsForStop(_currentStop);
-    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-    final curveAnimation = CurvedAnimation(parent: _animationController, curve: Curves.linear);
-    _tween = Tween<double>(begin: _stops[_currentStop], end: _stops[_targetStop]);
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    final curveAnimation =
+        CurvedAnimation(parent: _animationController, curve: Curves.linear);
+    _tween =
+        Tween<double>(begin: _stops[_currentStop], end: _stops[_targetStop]);
     _animation = _tween.animate(curveAnimation);
     _scrollController.addListener(() {
       if (_scrollController.offset < -widget.dragThreshold) {
@@ -136,7 +145,9 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
     _tween.begin = from;
     _tween.end = to;
     _animationController.value = 0;
-    if (_scrollController.offset < 0) _scrollController.animateTo(0, duration: Duration(milliseconds: 200), curve: Curves.linear);
+    if (_scrollController.offset < 0)
+      _scrollController.animateTo(0,
+          duration: Duration(milliseconds: 200), curve: Curves.linear);
     _animationController.fling().then((_) {
       this._currentStop = this._targetStop;
       setState(() {
@@ -146,15 +157,18 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
   }
 
   /// The current height of the bottom sheet.
-  get height {
+  double get height {
+    var newHeight;
     if (_closing)
-      return _closingHeight;
+      newHeight = _closingHeight;
     else if (_dragging)
-      return _stops[_currentStop] + _dragOffset;
+      newHeight = _stops[_currentStop] + _dragOffset;
     else if (_animationController.isAnimating)
-      return _animation.value;
+      newHeight = _animation.value;
     else
-      return _stops[_currentStop];
+      newHeight = _stops[_currentStop];
+
+    return min(_stops[_stops.length - 1], max(0, newHeight));
   }
 
   @override
@@ -190,11 +204,12 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
               _animate(_stops[_currentStop] + _dragOffset, _stops[_targetStop]);
             }
           },
-          child: widget.builder(context, _scrollController, _scrollPhysics, _currentStop),
+          child: widget.builder(
+              context, _scrollController, _scrollPhysics, _currentStop),
         ),
         builder: (context, child) {
           return SizedBox(
-            height: min(_stops[_stops.length - 1], max(0, height)),
+            height: height,
             child: child,
           );
         });
@@ -202,25 +217,30 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
 }
 
 /// Shows the Stopper bottom sheet.
-/// Returns a [PersistentBottomSheetController] that can be used 
-PersistentBottomSheetController showStopper(
-    {
-    /// The key of the [Stopper] widget
-    Key key,
-    /// The build context 
-    @required BuildContext context,
-    /// The builder of the bottom sheet
-    @required StopperBuilder builder,
-    /// The list of stop heights as logical pixel values. Use [MediaQuery] to compute the heights relative to screen height.
-    /// The order of the stop heights must be from the lowest to the highest.
-    @required List<double> stops,
-    /// The initial stop number.
-    int initialStop = 0,
-    /// If [true] then the user can close the bottom sheet dragging it down from the lowest stop. 
-    bool userCanClose = true,
-    /// The minimum offset (in logical pixels) to trigger a stop change when dragging.
-    double dragThreshold = 25
-    }) {
+/// Returns a [PersistentBottomSheetController] that can be used
+PersistentBottomSheetController showStopper({
+  /// The key of the [Stopper] widget
+  Key key,
+
+  /// The build context
+  @required BuildContext context,
+
+  /// The builder of the bottom sheet
+  @required StopperBuilder builder,
+
+  /// The list of stop heights as logical pixel values. Use [MediaQuery] to compute the heights relative to screen height.
+  /// The order of the stop heights must be from the lowest to the highest.
+  @required List<double> stops,
+
+  /// The initial stop number.
+  int initialStop = 0,
+
+  /// If [true] then the user can close the bottom sheet dragging it down from the lowest stop.
+  bool userCanClose = true,
+
+  /// The minimum offset (in logical pixels) to trigger a stop change when dragging.
+  double dragThreshold = 25,
+}) {
   PersistentBottomSheetController cont;
   cont = showBottomSheet(
     context: context,
@@ -231,9 +251,11 @@ PersistentBottomSheetController showStopper(
         stops: stops,
         initialStop: initialStop,
         dragThreshold: dragThreshold,
-        onClose: userCanClose ? () {
-          cont.close();
-        }: null,
+        onClose: userCanClose
+            ? () {
+                cont.close();
+              }
+            : null,
       );
     },
   );
