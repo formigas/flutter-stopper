@@ -93,6 +93,15 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
     _scrollPhysics = _getScrollPhysicsForStop(_currentStop);
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    _animationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed &&
+          this._currentStop != this._targetStop) {
+        this._currentStop = this._targetStop;
+        setState(() {
+          _scrollPhysics = _getScrollPhysicsForStop(_currentStop);
+        });
+      }
+    });
     final curveAnimation =
         CurvedAnimation(parent: _animationController, curve: Curves.linear);
     _tween =
@@ -158,12 +167,7 @@ class StopperState extends State<Stopper> with SingleTickerProviderStateMixin {
     if (_scrollController.offset < 0)
       _scrollController.animateTo(0,
           duration: Duration(milliseconds: 200), curve: Curves.linear);
-    _animationController.fling().then((_) {
-      this._currentStop = this._targetStop;
-      setState(() {
-        _scrollPhysics = _getScrollPhysicsForStop(_currentStop);
-      });
-    });
+    _animationController.fling();
   }
 
   /// The current height of the bottom sheet.
